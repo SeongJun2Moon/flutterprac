@@ -12,17 +12,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: Scaffold(
-        body: Container(
-          height: double.infinity, width: double.infinity,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Flexible(child: Container(width: double.infinity, color: Colors.orange), flex: 4,),
-              Flexible(child: Container(width: double.infinity, color: Colors.teal,), flex: 6,)
-            ],
-          ),
-        )
+        body: Image.asset("images/dog.jpg")
 
       ),
     );

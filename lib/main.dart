@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:contacts_service/contacts_service.dart';
 
 void main() {
   runApp(MaterialApp(debugShowCheckedModeBanner: false, home: MyApp()));
@@ -12,22 +14,61 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  var a = 1;
-  var names = ['문성준', "엄준식", "홍명보", "김춘식", "군것질"];
-  var value;
 
-  addnames(value){
-    setState(() {
-      names.add(value);
+  // 변수
+  var a = 1;
+  List<Contact> names = [];
+  var value = "";
+
+  // 함수
+  addnames(String value) {
+    var newContact = Contact();
+    setState(() async {
+      if (value==""){
+        return;
+      } else {
+        newContact.givenName = value;
+        ContactsService.addContact(newContact);
+        setContacts();
+      }
     });
   }
 
-  // This widget is the root of your application.
+  deleteNames(value) async {
+    var contacts = await ContactsService.getContacts();
+    setState((){
+      names.remove(value);
+      names = contacts;
+      ContactsService.deleteContact(value);
+      setContacts();
+    });
+  }
+
+  setContacts() async {
+    var contacts = await ContactsService.getContacts();
+    setState(() {
+      names = contacts;
+    });
+  }
+
+  getPermission() async {
+    var status = await Permission.contacts.status;
+    if (status.isGranted) {
+      print("허락됨");
+      setContacts();
+    } else if (status.isDenied) {
+      print("거절됨");
+      Permission.contacts.request();
+    }
+  }
+
+
+  // 어플 위젯
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       floatingActionButton: FloatingActionButton(
-        child: Icon(Icons.warning),
+        child: Icon(Icons.add),
         onPressed: () {
           showDialog(
               context: context,
@@ -36,8 +77,14 @@ class _MyAppState extends State<MyApp> {
               });
         },
       ),
-      appBar: AppBar(title: Text("생활기록부")),
-      body: HGD(names : names),
+      appBar: AppBar(
+          title: Text("생활기록부"),
+          actions: [
+            // IconButton(onPressed: (){sortedNames();}, icon: Icon(Icons.sort)),
+            IconButton(onPressed: (){getPermission();}, icon: Icon(Icons.contacts))
+          ]
+      ),
+      body: Recods(names : names, deleteNames : deleteNames),
       bottomNavigationBar: BottomAppBar(
         child: Bottom(),
       ),
@@ -60,11 +107,11 @@ class DialogUI extends StatelessWidget {
       width: 300,
       child: Column(
         children: [
-          TextField(controller: inputData,),
+          TextField(controller: inputData),
           TextButton(
               onPressed: () {
+                Navigator.of(context).pop();
                 addnames(inputData.text);
-                // print(inputData.text);
               },
               child: Text("확인")),
           TextButton(
@@ -78,20 +125,22 @@ class DialogUI extends StatelessWidget {
   }
 }
 
-class HGD extends StatelessWidget {
-  HGD({Key? key, this.names}) : super(key: key);
+class Recods extends StatelessWidget {
+  Recods({Key? key, this.names, this.deleteNames}) : super(key: key);
   var names;
+  var deleteNames;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-        height: 300,
+        height: double.infinity,
         child: ListView.builder(
             itemCount: names.length,
             itemBuilder: (c, i) {
               return ListTile(
                 leading: Icon(Icons.home),
-                title: Text(names[i]),
+                title: Text(names[i].displayName ?? "이름 없는 놈"),
+                trailing: IconButton(onPressed: (){deleteNames(names[i]);}, icon: Icon(Icons.delete),),
               );
             }));
   }
@@ -115,3 +164,5 @@ class Bottom extends StatelessWidget {
     );
   }
 }
+
+
